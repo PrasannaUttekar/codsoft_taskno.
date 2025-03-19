@@ -1,0 +1,214 @@
+import random
+import json
+import time
+
+def print_board(board, size=3):
+    """Prints the current state of the board."""
+    print("\n")
+    for row in range(size):
+        print(" " + " | ".join(board[row * size: (row + 1) * size]))
+        if row < size - 1:
+            print("---" * size + "-")
+    print("\n")
+
+def check_winner(board, size=3):
+    """Checks if there's a winner or a tie."""
+    # Check rows
+    for row in range(size):
+        if all(board[row * size + col] == board[row * size] != " " for col in range(size)):
+            return board[row * size]
+
+    # Check columns
+    for col in range(size):
+        if all(board[row * size + col] == board[col] != " " for row in range(size)):
+            return board[col]
+
+    # Check diagonals
+    if all(board[i * size + i] == board[0] != " " for i in range(size)):
+        return board[0]
+    if all(board[i * size + (size - 1 - i)] == board[size - 1] != " " for i in range(size)):
+        return board[size - 1]
+
+    # Check for tie
+    if " " not in board:
+        return "Tie"
+    return None
+
+def minimax(board, depth, is_maximizing, alpha, beta, size=3):
+    """Minimax algorithm with Alpha-Beta Pruning."""
+    result = check_winner(board, size)
+    if result is not None:
+        if result == "O":  # AI wins
+            return 1
+        elif result == "X":  # Human wins
+            return -1
+        else:  # Tie
+            return 0
+
+    if is_maximizing:
+        best_score = -float("inf")
+        for i in range(len(board)):
+            if board[i] == " ":
+                board[i] = "O"
+                score = minimax(board, depth + 1, False, alpha, beta, size)
+                board[i] = " "
+                best_score = max(score, best_score)
+                alpha = max(alpha, best_score)
+                if beta <= alpha:
+                    break
+        return best_score
+    else:
+        best_score = float("inf")
+        for i in range(len(board)):
+            if board[i] == " ":
+                board[i] = "X"
+                score = minimax(board, depth + 1, True, alpha, beta, size)
+                board[i] = " "
+                best_score = min(score, best_score)
+                beta = min(beta, best_score)
+                if beta <= alpha:
+                    break
+        return best_score
+
+def ai_move(board, difficulty, size=3):
+    """Determines the best move for the AI based on difficulty."""
+    if difficulty == "easy":
+        empty_cells = [i for i, cell in enumerate(board) if cell == " "]
+        return random.choice(empty_cells)
+    elif difficulty == "medium":
+        if random.random() < 0.5:
+            return ai_move(board, "easy", size)
+        else:
+            return ai_move(board, "hard", size)
+    elif difficulty == "hard":
+        best_score = -float("inf")
+        best_move = None
+        for i in range(len(board)):
+            if board[i] == " ":
+                board[i] = "O"
+                score = minimax(board, 0, False, -float("inf"), float("inf"), size)
+                board[i] = " "
+                if score > best_score:
+                    best_score = score
+                    best_move = i
+        return best_move
+
+def save_game(board, current_player, size, scores):
+    """Saves the current game state to a file."""
+    game_state = {
+        "board": board,
+        "current_player": current_player,
+        "size": size,
+        "scores": scores
+    }
+    with open("tic_tac_toe_save.json", "w") as file:
+        json.dump(game_state, file)
+    print("Game saved successfully!")
+
+def load_game():
+    """Loads a saved game state from a file."""
+    try:
+        with open("tic_tac_toe_save.json", "r") as file:
+            game_state = json.load(file)
+        print("Game loaded successfully!")
+        return game_state["board"], game_state["current_player"], game_state["size"], game_state["scores"]
+    except FileNotFoundError:
+        print("No saved game found.")
+        return None
+
+def play_game():
+    """Main function to play the Tic-Tac-Toe game."""
+    scores = {"X": 0, "O": 0, "Tie": 0}
+    size = 3  # Default board size
+    while True:
+        print("Welcome to Tic-Tac-Toe!")
+        print("1. Player vs. AI")
+        print("2. Player vs. Player")
+        print("3. AI vs. AI")
+        print("4. Load Saved Game")
+        print("5. Exit")
+        choice = input("Select an option (1/2/3/4/5): ")
+
+        if choice == "1":
+            print("\nSelect AI Difficulty:")
+            print("1. Easy")
+            print("2. Medium")
+            print("3. Hard")
+            difficulty_choice = input("Enter difficulty level (1/2/3): ")
+            difficulty = {"1": "easy", "2": "medium", "3": "hard"}.get(difficulty_choice, "hard")
+            print(f"\nStarting game with AI (Difficulty: {difficulty.capitalize()})...")
+            board = [" " for _ in range(size * size)]
+            current_player = "X"  # Human starts
+        elif choice == "2":
+            print("\nStarting Player vs. Player game...")
+            board = [" " for _ in range(size * size)]
+            current_player = "X"  # Player 1 starts
+        elif choice == "3":
+            print("\nStarting AI vs. AI game...")
+            board = [" " for _ in range(size * size)]
+            current_player = "X"  # AI 1 starts
+        elif choice == "4":
+            loaded_game = load_game()
+            if loaded_game:
+                board, current_player, size, scores = loaded_game
+            else:
+                continue
+        elif choice == "5":
+            print("Thanks for playing! Final scores:")
+            print(f"X: {scores['X']} wins, O: {scores['O']} wins, Ties: {scores['Tie']}")
+            break
+        else:
+            print("Invalid choice. Please try again.")
+            continue
+
+        while True:
+            print_board(board, size)
+            if current_player == "X" or choice == "2":
+                print(f"Player {current_player}'s turn.")
+                while True:
+                    try:
+                        move = int(input("Enter your move (0-8): "))
+                        if 0 <= move < size * size and board[move] == " ":
+                            board[move] = current_player
+                            break
+                        else:
+                            print("Invalid move. Try again.")
+                    except ValueError:
+                        print("Please enter a valid number.")
+            elif choice == "3":
+                print(f"AI {current_player}'s turn.")
+                time.sleep(1)  # Simulate thinking time
+                move = ai_move(board, "hard", size)
+                board[move] = current_player
+            else:
+                print("AI is making a move...")
+                time.sleep(1)  # Simulate thinking time
+                move = ai_move(board, difficulty, size)
+                board[move] = "O"
+
+            winner = check_winner(board, size)
+            if winner:
+                print_board(board, size)
+                if winner == "Tie":
+                    print("It's a tie!")
+                    scores["Tie"] += 1
+                else:
+                    print(f"{winner} wins!")
+                    scores[winner] += 1
+                break
+
+            # Switch players
+            current_player = "O" if current_player == "X" else "X"
+
+        print(f"Current scores: X: {scores['X']} wins, O: {scores['O']} wins, Ties: {scores['Tie']}")
+        save_option = input("Do you want to save the game? (yes/no): ").lower()
+        if save_option == "yes":
+            save_game(board, current_player, size, scores)
+        play_again = input("Do you want to play again? (yes/no): ").lower()
+        if play_again != "yes":
+            print("Thanks for playing! Final scores:")
+            print(f"X: {scores['X']} wins, O: {scores['O']} wins, Ties: {scores['Tie']}")
+            break
+
+# Run the game
+play_game()

@@ -1,0 +1,150 @@
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.applications import VGG16
+from tensorflow.keras.preprocessing.image import load_img, img_to_array
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.models import Model, Sequential
+from tensorflow.keras.layers import Input, Dense, LSTM, Embedding, Dropout, Add
+from tensorflow.keras.utils import to_categorical
+from PIL import Image
+import matplotlib.pyplot as plt
+import os
+
+# Step 1: Load and preprocess the dataset
+def load_dataset(image_dir, caption_file):
+    """Load images and captions from the dataset."""
+    with open(caption_file, "r") as file:
+        captions = file.read().splitlines()
+    
+    image_captions = {}
+    for line in captions:
+        parts = line.split(",")
+        image_name = parts[0]
+        caption = ",".join(parts[1:]).strip()
+        if image_name not in image_captions:
+            image_captions[image_name] = []
+        image_captions[image_name].append(caption)
+    
+    return image_captions
+
+# Step 2: Preprocess images using VGG16
+def preprocess_image(image_path):
+    """Load and preprocess an image for VGG16."""
+    image = load_img(image_path, target_size=(224, 224))
+    image = img_to_array(image)
+    image = np.expand_dims(image, axis=0)
+    image = tf.keras.applications.vgg16.preprocess_input(image)
+    return image
+
+# Step 3: Extract features using VGG16
+def extract_features(image_dir, image_captions):
+    """Extract features from all images using VGG16."""
+    model = VGG16(weights="imagenet", include_top=False, pooling="avg")
+    features = {}
+    for image_name in image_captions.keys():
+        image_path = os.path.join(image_dir, image_name)
+        image = preprocess_image(image_path)
+        feature = model.predict(image, verbose=0)
+        features[image_name] = feature.flatten()
+    return features
+
+# Step 4: Preprocess captions
+def preprocess_captions(image_captions):
+    """Tokenize and preprocess captions."""
+    captions_list = []
+    for captions in image_captions.values():
+        captions_list.extend(captions)
+    
+    tokenizer = Tokenizer()
+    tokenizer.fit_on_texts(captions_list)
+    vocab_size = len(tokenizer.word_index) + 1
+    max_length = max(len(caption.split()) for caption in captions_list)
+    
+    return tokenizer, vocab_size, max_length
+
+# Step 5: Create training data
+def create_training_data(features, image_captions, tokenizer, max_length, vocab_size):
+    """Create training data for the model."""
+    X_images, X_text, y = [], [], []
+    for image_name, captions in image_captions.items():
+        for caption in captions:
+            sequence = tokenizer.texts_to_sequences([caption])[0]
+            for i in range(1, len(sequence)):
+                in_seq, out_seq = sequence[:i], sequence[i]
+                in_seq = pad_sequences([in_seq], maxlen=max_length)[0]
+                out_seq = to_categorical([out_seq], num_classes=vocab_size)[0]
+                X_images.append(features[image_name])
+                X_text.append(in_seq)
+                y.append(out_seq)
+    return np.array(X_images), np.array(X_text), np.array(y)
+
+# Step 6: Build the image captioning model
+def build_model(vocab_size, max_length):
+    """Build the image captioning model."""
+    # Image feature extractor
+    inputs1 = Input(shape=(4096,))
+    fe1 = Dropout(0.5)(inputs1)
+    fe2 = Dense(256, activation="relu")(fe1)
+    
+    # Sequence model
+    inputs2 = Input(shape=(max_length,))
+    se1 = Embedding(vocab_size, 256, mask_zero=True)(inputs2)
+    se2 = Dropout(0.5)(se1)
+    se3 = LSTM(256)(se2)
+    
+    # Decoder
+    decoder1 = Add()([fe2, se3])
+    decoder2 = Dense(256, activation="relu")(decoder1)
+    outputs = Dense(vocab_size, activation="softmax")(decoder2)
+    
+    # Combine the model
+    model = Model(inputs=[inputs1, inputs2], outputs=outputs)
+    model.compile(loss="categorical_crossentropy", optimizer="adam")
+    return model
+
+# Step 7: Generate captions for new images
+def generate_caption(model, tokenizer, image_features, max_length):
+    """Generate a caption for a given image."""
+    caption = "startseq"
+    for _ in range(max_length):
+        sequence = tokenizer.texts_to_sequences([caption])[0]
+        sequence = pad_sequences([sequence], maxlen=max_length)
+        pred = model.predict([image_features, sequence], verbose=0)
+        pred_word = np.argmax(pred)
+        word = tokenizer.index_word.get(pred_word, "")
+        if word is None or word == "endseq":
+            break
+        caption += " " + word
+    return caption.replace("startseq", "").strip()
+
+# Step 8: Main function
+def main():
+    # Load dataset
+    image_dir = "images"  # Directory containing images
+    caption_file = "captions.txt"  # File containing captions
+    image_captions = load_dataset(image_dir, caption_file)
+    
+    # Extract features
+    features = extract_features(image_dir, image_captions)
+    
+    # Preprocess captions
+    tokenizer, vocab_size, max_length = preprocess_captions(image_captions)
+    
+    # Create training data
+    X_images, X_text, y = create_training_data(features, image_captions, tokenizer, max_length, vocab_size)
+    
+    # Build and train the model
+    model = build_model(vocab_size, max_length)
+    model.fit([X_images, X_text], y, epochs=20, batch_size=64, verbose=2)
+    
+    # Test the model on a new image
+    test_image_path = "test_image.jpg"  # Path to a test image
+    test_image = preprocess_image(test_image_path)
+    test_features = extract_features(image_dir, {os.path.basename(test_image_path): test_image})
+    caption = generate_caption(model, tokenizer, test_features[os.path.basename(test_image_path)], max_length)
+    print("Generated Caption:", caption)
+
+# Run the program
+if __name__ == "__main__":
+    main()

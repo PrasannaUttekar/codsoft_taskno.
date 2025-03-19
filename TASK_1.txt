@@ -1,0 +1,174 @@
+def advanced_chatbot():
+    print("🤖 Welcome to the Advanced Chatbot! 🤖")
+    print("I'm Pixel, your digital pal. Let's chat! Type 'help' to see what I can do.")
+    
+    # To-do list
+    todo_list = []
+    
+    while True:
+        user_input = input("You: ").lower()
+        
+        # Greetings
+        if any(word in user_input for word in ["hello", "hi", "hey", "yo"]):
+            print("Pixel: 👋 Hey there! How can I brighten your day?")
+        
+        # How are you?
+        elif "how are you" in user_input:
+            print("Pixel: 🤖 I'm just a bunch of code, but I'm feeling fantastic! How about you?")
+        
+        # Name
+        elif "your name" in user_input:
+            print("Pixel: 🎮 I'm Pixel, your virtual buddy. Named after the tiny dots that make up your screen!")
+        
+        # Time
+        elif "time" in user_input:
+            from datetime import datetime
+            now = datetime.now()
+            current_time = now.strftime("%H:%M:%S")
+            print(f"Pixel: ⏳ Right now, the clock ticks at {current_time}. Time flies when we're chatting!")
+        
+        # Date
+        elif "date" in user_input:
+            from datetime import date
+            today = date.today()
+            print(f"Pixel: 📅 Today's date is {today}. Make today unforgettable!")
+        
+        # Weather
+        elif "weather" in user_input:
+            print("Pixel: 🌤️ I'm not connected to the weather network, but I hope it's as bright as your smile!")
+        
+        # Fun fact
+        elif "fact" in user_input or "tell me something" in user_input:
+            print("Pixel: 🧠 Did you know? Bananas are berries, but strawberries aren't!")
+        
+        # Joke
+        elif "joke" in user_input or "make me laugh" in user_input:
+            print("Pixel: 🎭 Why don’t scientists trust atoms?")
+            print("...Because they make up everything! 😂")
+        
+        # Favorite color
+        elif "color" in user_input:
+            print("Pixel: 🌈 My favorite color is binary... just kidding! It's pixelated rainbow!")
+        
+        # Math calculations
+        elif "calculate" in user_input or "math" in user_input:
+            try:
+                print("Pixel: 🧮 Sure! Enter a simple math expression (e.g., 2 + 3 * 4):")
+                expression = input("You: ")
+                result = eval(expression)  # Safely evaluate the expression
+                print(f"Pixel: 🧮 The result is {result}.")
+            except:
+                print("Pixel: 🤔 Oops! That doesn't seem like a valid math expression.")
+        
+        # Recommend a book
+        elif "book" in user_input or "recommend a book" in user_input:
+            print("Pixel: 📚 Here are some great books you might enjoy:")
+            print("- 'The Alchemist' by Paulo Coelho")
+            print("- '1984' by George Orwell")
+            print("- 'To Kill a Mockingbird' by Harper Lee")
+            print("- 'The Great Gatsby' by F. Scott Fitzgerald")
+        
+        # Recommend a song
+        elif "song" in user_input or "recommend a song" in user_input:
+            print("Pixel: 🎵 Here are some songs you might like:")
+            print("- 'Bohemian Rhapsody' by Queen")
+            print("- 'Shape of You' by Ed Sheeran")
+            print("- 'Blinding Lights' by The Weeknd")
+            print("- 'Rolling in the Deep' by Adele")
+        
+        # Motivational quote
+        elif "quote" in user_input or "motivate me" in user_input:
+            print("Pixel: 💬 Here's a motivational quote for you:")
+            print("'The only way to do great work is to love what you do.' – Steve Jobs")
+        
+        # Trivia question
+        elif "trivia" in user_input or "quiz" in user_input:
+            print("Pixel: 🧩 Let's test your knowledge! Here's a trivia question:")
+            print("What is the capital of France?")
+            answer = input("You: ").lower()
+            if answer == "paris":
+                print("Pixel: 🎉 Correct! You're a genius!")
+            else:
+                print("Pixel: 😅 Oops! The correct answer is Paris.")
+        
+        # To-do list
+        elif "add" in user_input and "to-do" in user_input:
+            print("Pixel: 📝 What would you like to add to your to-do list?")
+            task = input("You: ")
+            todo_list.append(task)
+            print(f"Pixel: ✅ Added '{task}' to your to-do list.")
+        
+        elif "show" in user_input and "to-do" in user_input:
+            if todo_list:
+                print("Pixel: 📝 Here's your to-do list:")
+                for i, task in enumerate(todo_list, 1):
+                    print(f"{i}. {task}")
+            else:
+                print("Pixel: 📝 Your to-do list is empty. Add some tasks!")
+        
+        elif "remove" in user_input and "to-do" in user_input:
+            if todo_list:
+                print("Pixel: 📝 Which task would you like to remove? (Enter the number)")
+                for i, task in enumerate(todo_list, 1):
+                    print(f"{i}. {task}")
+                try:
+                    task_num = int(input("You: ")) - 1
+                    if 0 <= task_num < len(todo_list):
+                        removed_task = todo_list.pop(task_num)
+                        print(f"Pixel: ✅ Removed '{removed_task}' from your to-do list.")
+                    else:
+                        print("Pixel: 🤔 Invalid task number.")
+                except:
+                    print("Pixel: 🤔 That doesn't seem like a valid number.")
+            else:
+                print("Pixel: 📝 Your to-do list is empty. Add some tasks!")
+        
+        # Simple game: Guess the number
+        elif "game" in user_input or "play" in user_input:
+            import random
+            print("Pixel: 🎮 Let's play a game! Guess a number between 1 and 10.")
+            number = random.randint(1, 10)
+            attempts = 0
+            while True:
+                guess = input("You: ")
+                try:
+                    guess = int(guess)
+                    attempts += 1
+                    if guess < number:
+                        print("Pixel: 🔻 Too low! Try again.")
+                    elif guess > number:
+                        print("Pixel: 🔺 Too high! Try again.")
+                    else:
+                        print(f"Pixel: 🎉 You got it in {attempts} attempts! Well done!")
+                        break
+                except:
+                    print("Pixel: 🤔 That's not a valid number. Try again!")
+        
+        # Help command
+        elif "help" in user_input:
+            print("Pixel: 🛠️ Here's what I can do:")
+            print("- Greet you (say 'hello', 'hi', etc.)")
+            print("- Tell you the time (ask 'what's the time?')")
+            print("- Tell you today's date (ask 'what's the date?')")
+            print("- Share a fun fact (ask 'tell me a fact')")
+            print("- Tell a joke (ask 'tell me a joke')")
+            print("- Recommend a book (ask 'recommend a book')")
+            print("- Recommend a song (ask 'recommend a song')")
+            print("- Motivate you (ask 'give me a quote')")
+            print("- Perform math calculations (ask 'calculate')")
+            print("- Test your knowledge (ask 'trivia')")
+            print("- Manage your to-do list (ask 'add to-do', 'show to-do', or 'remove to-do')")
+            print("- Play a game (ask 'play a game')")
+            print("- Say goodbye (type 'bye')")
+        
+        # Goodbye
+        elif any(word in user_input for word in ["bye", "goodbye", "see you"]):
+            print("Pixel: 🎮 Farewell, friend! Thanks for chatting. Until next time!")
+            break
+        
+        # Unknown input
+        else:
+            print("Pixel: 🤔 Hmm, I didn't quite catch that. Type 'help' to see what I can do.")
+
+# Run the chatbot
+advanced_chatbot()
